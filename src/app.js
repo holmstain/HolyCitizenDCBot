@@ -107,30 +107,6 @@ client.on('messageCreate', async message => {
         }
     }
 });
-=======
-require('dotenv').config();
-const { Console } = require("console");
-const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
-const INTENTS = Object.values(GatewayIntentBits);
-const PARTIALS = Object.values(Partials);
-const client = new Client({
-    intents: INTENTS,
-    allowedMentions: {
-        parse: ["users"]
-    },
-    partials: PARTIALS,
-    retryLimit: 3
-});
-
-global.client = client;
-client.commands = (global.commands = []);
-
-const { readdirSync } = require("fs")
-
-/* Slash Komutları Yüklüyoruz */
-
-readdirSync('./commands').forEach(f => {
-  if(!f.endsWith(".js")) return;
 
 const token = process.env.TOKEN;
 console.log(`TOKEN: ${token}`);
