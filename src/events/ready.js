@@ -1,3 +1,10 @@
+
+export default client => {
+    client.once("ready", () => {
+        console.log("Hizmete Hazır!")
+    })
+}
+=======
 require('dotenv').config();
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
