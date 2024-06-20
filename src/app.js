@@ -1,3 +1,4 @@
+master
 import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
 import {Console} from "console";
 import dotenv from 'dotenv'
@@ -106,35 +107,31 @@ client.on('messageCreate', async message => {
         }
     }
 });
-
-client.on('guildMemberAdd', member => {
-    const channel = member.guild.systemChannel; // Sunucunun sistem kanalına hoş geldin mesajı gönderelim
-
-    if (!channel) return;
-
-    channel.send(`Hoş geldin, ${member.user}! Yeni Meclis Gözcümüzü Karşılayalım!`);
+=======
+require('dotenv').config();
+const { Console } = require("console");
+const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
+const INTENTS = Object.values(GatewayIntentBits);
+const PARTIALS = Object.values(Partials);
+const client = new Client({
+    intents: INTENTS,
+    allowedMentions: {
+        parse: ["users"]
+    },
+    partials: PARTIALS,
+    retryLimit: 3
 });
 
-client.on('messageCreate', message => {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
+global.client = client;
+client.commands = (global.commands = []);
 
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
+const { readdirSync } = require("fs")
 
-    if (command === 'hoşgeldin') {
-        const channel = message.guild.channels.cache.find(ch => ch.name === 'genel'); // 'genel' isimli kanalı bulalım
+/* Slash Komutları Yüklüyoruz */
 
-        if (!channel) return message.reply('Genel kanal bulunamadı.');
-
-        channel.send(`Hoş geldin ${user}! Burası çok eğlenceli olacak.`);
-    }
-});
+readdirSync('./commands').forEach(f => {
+  if(!f.endsWith(".js")) return;
 
 const token = process.env.TOKEN;
 console.log(`TOKEN: ${token}`);
 client.login(TOKEN)
-
-
-// Status
-// Activity
-// Presence

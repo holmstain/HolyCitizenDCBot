@@ -2,7 +2,7 @@
   "name": "holycitizendcbot",
   "version": "1.0.0",
   "description": "Personal Discord Bot",
-  "type": "module",
+  "type": "commonjs",
   "main": "app.js",
   "scripts": {
     "test": "node app.js",
