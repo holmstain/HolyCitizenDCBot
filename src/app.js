@@ -1,108 +1,64 @@
-import { Client, GatewayIntentBits, Collection, IntentsBitField } from "discord.js"
-import "dotenv/config"
-
-const prefix = "/"
-
-
+require('dotenv').config();
+const { Console } = require("console");
+const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
+const INTENTS = Object.values(GatewayIntentBits);
+const PARTIALS = Object.values(Partials);
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, 
-        GatewayIntentBits.GuildMessages, 
-        GatewayIntentBits.MessageContent, IntentsBitField.Flags.GuildMembers ],
-    presence: {activities: [{name: "Holmstain", type: "WATCHING"}]}
+    intents: INTENTS,
+    allowedMentions: {
+        parse: ["users"]
+    },
+    partials: PARTIALS,
+    retryLimit: 3
+});
+
+global.client = client;
+client.commands = (global.commands = []);
+
+const { readdirSync } = require("fs")
+
+/* Slash Komutları Yüklüyoruz */
+
+readdirSync('./commands').forEach(f => {
+  if(!f.endsWith(".js")) return;
+
+ const props = require(`./commands/${f}`);
+
+ client.commands.push({
+       name: props.name.toLowerCase(),
+       description: props.description,
+       options: props.options,
+       dm_permission: props.dm_permission,
+       type: 1
+ });
+
+console.log(`[COMMAND] ${props.name} komutu yüklendi.`)
+
+});
+
+
+/* Slash Komutları Yüklüyoruz */
+
+/* Eventleri Yüklüyoruz */
+
+readdirSync('./events').forEach(e => {
+
+  const eve = require(`./events/${e}`);
+  const name = e.split(".")[0];
+
+  client.on(name, (...args) => {
+            eve(client, ...args)
+        });
+
+console.log(`[EVENT] ${name} eventi yüklendi.`)
+
+});
+
+
+/* Eventleri Yüklüyoruz */
+
+client.login(process.env.DISCORD_TOKEN).then(app => {
+  console.log(`[BOT] Token girişi başarılı.`)
+}).catch(app => {
+  console.log(`[BOT] Token girşi başarısız.`)
 })
-
-client.once('ready', () => {
-    console.log(`Hizmete Hazır!`);
-});
-
-client.commands = new Collection();
-
-
-
-const repliedMessages = new Set();
-client.on('messageCreate', message => {
-    // Bot'un kendisine yanıt vermemesi için kontrol
-    if (message.author.bot)
-        return;
-
-    // Eğer mesaj ID'si zaten Set içinde ise dönüş yap
-    if (repliedMessages.has(message.id))
-        return;
-    const greetings = ["sa", "merhaba", "selamlar", "selam"];
-    if (greetings.includes(message.content.toLowerCase())) {
-        message.reply("Merhaba, Hoşgeldin!");
-        repliedMessages.add(message.id);
-        
-
-    // IKINCI KOMUT
-        if (repliedMessages.has(message.id))
-            return;
-        const greetings = ["nasılsın"];
-        if (greetings.includes(message.content.toLowerCase())) {
-            message.reply("Ben botum kral (mk aveli)");
-            repliedMessages.add(message.id);
-        }
-    }
-})
-
-client.on('messageCreate', async message => {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const event = args.shift().toLowerCase();
-
-    if (event === 'clear') {
-        // Sadece mesajları silebilecek olan kullanıcıların izni olduğunu kontrol edelim
-        if (!message.member.permissions.has('MANAGE_MESSAGES')) {
-            return message.reply('Bu komutu kullanma izniniz yok.');
-        }
-
-        // Silinecek mesaj sayısını alalım
-        const amount = parseInt(args[0]);
-
-        // Verilen değer geçerli bir sayı mı kontrol edelim
-        if (isNaN(amount)) {
-            return message.reply('Lütfen geçerli bir sayı girin.');
-        } else if (amount <= 0 || amount > 100) {
-            return message.reply('Silinecek mesaj sayısı 1 ile 100 arasında olmalıdır.');
-        }
-
-        // Mesajları silme işlemi
-        try {
-            await message.channel.bulkDelete(amount);
-            message.reply(`${amount} adet mesaj başarıyla silindi.`);
-        } catch (err) {
-            console.error('Hata oluştu:', err);
-            message.reply('Mesajları silerken bir hata oluştu.');
-        }
-    }
-});
-
-client.on('guildMemberAdd', member => {
-    const channel = member.guild.systemChannel; // Sunucunun sistem kanalına hoş geldin mesajı gönderelim
-
-    if (!channel) return;
-
-    channel.send(`Hoş geldin, ${member.user}! Yeni Meclis Gözcümüzü Karşılayalım!`);
-});
-
-client.on('messageCreate', message => {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-
-    if (command === 'hoşgeldin') {
-        const channel = message.guild.channels.cache.find(ch => ch.name === process.env.WELCOME_CHANNEL_NAME); //
-
-        if (!channel) return message.reply('Genel kanal bulunamadı.');
-
-        channel.send(`Hoş geldin! Burası çok eğlenceli olacak.`);
-    }
-});
-client.login(process.env.TOKEN)
-
-
-// Status
-// Activity
-// Presence
