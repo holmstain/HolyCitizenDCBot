@@ -1,23 +1,47 @@
-import { Client, GatewayIntentBits, Collection, IntentsBitField } from "discord.js"
-import "dotenv/config"
+import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
+import {Console} from "console";
+import dotenv from 'dotenv'
+dotenv.config();
+import { TOKEN } from './.env'
+import { readdirSync } from "fs";
 
-const prefix = "/"
+    const INTENTS = Object.values(GatewayIntentBits);
+    const PARTIALS = Object.values(Partials);
+
+    const client = new Client ({
+        intents: INTENTS,
+        allowedMentions: {
+            parse: ["users"]
+        },
+        presence: {activities: [{name: "Holmstain", type: "WATCHING"}]},
+        partials: PARTIALS,
+        retryLimit: 3
+    });
+
+    global.client = client;
+    client.commands = (global.commands = []);
 
 
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds, 
-        GatewayIntentBits.GuildMessages, 
-        GatewayIntentBits.MessageContent, IntentsBitField.Flags.GuildMembers ],
-    presence: {activities: [{name: "Holmstain", type: "WATCHING"}]}
-})
+    readdirSync('./commands').forEach(f =>{
+        if(!f.endsWith(".js")) return;
 
-client.once('ready', () => {
-    console.log(`Hizmete Hazır!`);
-});
+        async function props(f) {
+            const module = await import(`./commands/${f}`);
+            return module; // tüm export'ları almak için
+          }
 
-client.commands = new Collection();
+        client.commands.push({
+            name: props.name.toLowerCase(),
+            description: props.description,
+            options: props.options,
+            dm_permission: props.dm_permission,
+            type: 1
+        })
 
+        console.log(`[COMMAND] ${props.name} yüklendi!`)
+    });
 
+/* Eventleri Yüklüyoruz */
 
 const repliedMessages = new Set();
 client.on('messageCreate', message => {
@@ -105,7 +129,10 @@ client.on('messageCreate', message => {
         channel.send(`Hoş geldin ${user}! Burası çok eğlenceli olacak.`);
     }
 });
-client.login(process.env.TOKEN)
+
+const token = process.env.TOKEN;
+console.log(`TOKEN: ${token}`);
+client.login(TOKEN)
 
 
 // Status
