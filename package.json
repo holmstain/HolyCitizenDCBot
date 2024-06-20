@@ -1,0 +1,30 @@
+{
+  "name": "holycitizendcbot",
+  "version": "1.0.0",
+  "description": "Personal Discord Bot",
+  "type": "module",
+  "main": "app.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "node app.js",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "HolyCitizenDCBot"
+  },
+  "keywords": [
+    "dc",
+    "bot",
+    "admin",
+    "server"
+  ],
+  "author": "Holmstain",
+  "license": "ISC",
+  
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
+    "nodemon": "^3.1.4"
+  }
+}
