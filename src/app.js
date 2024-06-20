@@ -32,21 +32,16 @@ client.on('messageCreate', message => {
     if (greetings.includes(message.content.toLowerCase())) {
         message.reply("Merhaba, Hoşgeldin!");
         repliedMessages.add(message.id);
-    }
-})
+        
 
-client.on('messageCreate', message => {
-    // Bot'un kendisine yanıt vermemesi için kontrol
-    if (message.author.bot)
-        return;
-
-    // Eğer mesaj ID'si zaten Set içinde ise dönüş yap
-    if (repliedMessages.has(message.id))
-        return;
-    const greetings = ["nasılsın"];
-    if (greetings.includes(message.content.toLowerCase())) {
-        message.reply("Ben botum kral (mk aveli)");
-        repliedMessages.add(message.id);
+    // IKINCI KOMUT
+        if (repliedMessages.has(message.id))
+            return;
+        const greetings = ["nasılsın"];
+        if (greetings.includes(message.content.toLowerCase())) {
+            message.reply("Ben botum kral (mk aveli)");
+            repliedMessages.add(message.id);
+        }
     }
 })
 
@@ -65,7 +60,7 @@ client.on('messageCreate', async message => {
         // Silinecek mesaj sayısını alalım
         const amount = parseInt(args[0]);
 
-        // amount geçerli bir sayı mı kontrol edelim
+        // Verilen değer geçerli bir sayı mı kontrol edelim
         if (isNaN(amount)) {
             return message.reply('Lütfen geçerli bir sayı girin.');
         } else if (amount <= 0 || amount > 100) {
@@ -98,11 +93,11 @@ client.on('messageCreate', message => {
     const command = args.shift().toLowerCase();
 
     if (command === 'hoşgeldin') {
-        const channel = message.guild.channels.cache.find(ch => ch.name === 'genel'); // 'genel' isimli kanalı bulalım
+        const channel = message.guild.channels.cache.find(ch => ch.name === process.env.WELCOME_CHANNEL_NAME); //
 
         if (!channel) return message.reply('Genel kanal bulunamadı.');
 
-        channel.send(`Hoş geldin ${user}! Burası çok eğlenceli olacak.`);
+        channel.send(`Hoş geldin! Burası çok eğlenceli olacak.`);
     }
 });
 client.login(process.env.TOKEN)
