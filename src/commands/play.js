@@ -1,81 +1,117 @@
-import dotenv from 'dotenv'
-dotenv.config()
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
-import { DisTube } from 'distube';
-import { YtDlpPlugin } from '@distube/yt-dlp';
-import { SpotifyPlugin } from '@distube/spotify';
+import { EmbedBuilder, SlashCommandBuilder, } from "discord.js"
 
-// Discord.js client oluşturma
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildVoiceStates,
-    ],
-    partials: [Partials.Channel]
-});
+    const playcommand = {
+        name: "play ",
+        description: "YT İçeriklerini sesli kanallarda dinleme",
+        type: 1,
+        options: [],
+	    data: new SlashCommandBuilder()
+		.setName("play")
+		.setDescription("play a song from YouTube.")
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName("search")
+				.setDescription("Searches for a song and plays it")
+				.addStringOption(option =>
+					option.setName("searchterms").setDescription("search keywords").setRequired(true)
+				)
+		)
+        .addSubcommand(subcommand =>
+			subcommand
+				.setName("playlist")
+				.setDescription("Plays a playlist from YT")
+				.addStringOption(option => option.setName("url").setDescription("the playlist's url").setRequired(true))
+		)
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName("song")
+				.setDescription("Plays a single song from YT")
+				.addStringOption(option => option.setName("url").setDescription("the song's url").setRequired(true))
+		),
+	execute: async ({ client, interaction }) => {
+        // Make sure the user is inside a voice channel
+		if (!interaction.member.voice.channel) return interaction.reply("You need to be in a Voice Channel to play a song.");
 
-// DisTube botunu kurma
-const distube = new DisTube(client, {
-    plugins: [new SpotifyPlugin(), new YtDlpPlugin(),],
-    emitNewSongOnly: true,
-});
+        // Create a play queue for the server
+		const queue = await client.player.createQueue(interaction.guild);
 
-client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-});
+        // Wait until you are connected to the channel
+		if (!queue.connection) await queue.connect(interaction.member.voice.channel)
 
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+		let embed = new MessageEmbed()
 
-    const { commandName, options } = interaction;
+		if (interaction.options.getSubcommand() === "song") {
+            let url = interaction.options.getString("url")
+            
+            // Search for the song using the discord-player
+            const result = await client.player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.YOUTUBE_VIDEO
+            })
 
-    if (commandName === 'play') {
-        const query = options.getString('query');
+            // finish if no tracks were found
+            if (result.tracks.length === 0)
+                return interaction.reply("No results")
 
-        if (!interaction.member.voice.channel) {
-            await interaction.reply('Öncelikle bir ses kanalına katılmalısınız!');
-            return;
-        }
+            // Add the track to the queue
+            const song = result.tracks[0]
+            await queue.addTrack(song)
+            embed
+                .setDescription(`**[${song.title}](${song.url})** has been added to the Queue`)
+                .setThumbnail(song.thumbnail)
+                .setFooter({ text: `Duration: ${song.duration}`})
 
-        const voiceChannel = interaction.member.voice.channel;
+		}
+        else if (interaction.options.getSubcommand() === "playlist") {
 
-        await interaction.reply(`Müzik aranıyor: \`${query}\`...`);
+            // Search for the playlist using the discord-player
+            let url = interaction.options.getString("url")
+            const result = await client.player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.YOUTUBE_PLAYLIST
+            })
 
-        try {
-            await distube.play(voiceChannel, query, {
-                member: interaction.member,
-                textChannel: interaction.channel,
-                interaction
-            });
-            await interaction.editReply(`Müzik çalınıyor: \`${query}\``);
-        } catch (error) {
-            await interaction.editReply('Müzik çalınırken bir hata oluştu.');
-            console.error(error);
-        }
-    }
-});
+            if (result.tracks.length === 0)
+                return interaction.reply(`No playlists found with ${url}`)
+            
+            // Add the tracks to the queue
+            const playlist = result.playlist
+            await queue.addTracks(result.tracks)
+            embed
+                .setDescription(`**${result.tracks.length} songs from [${playlist.title}](${playlist.url})** have been added to the Queue`)
+                .setThumbnail(playlist.thumbnail)
 
-// Slash komutları kaydetme
-client.on('ready', async () => {
-    const commands = [
-        {
-            name: 'play',
-            description: 'YouTube\'dan müzik çalar',
-            options: [
-                {
-                    name: 'query',
-                    type: 'STRING',
-                    description: 'YouTube URL veya arama terimi',
-                    required: true,
-                },
-            ],
-        },
-    ];
+		} 
+        else if (interaction.options.getSubcommand() === "search") {
 
-    await client.application.commands.set(commands);
-    console.log('Slash komutları kaydedildi');
-});
+            // Search for the song using the discord-player
+            let url = interaction.options.getString("searchterms")
+            const result = await client.player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.AUTO
+            })
 
-// Token ile giriş yapma
-client.login(process.env.DISCORD_TOKEN);
+            // finish if no tracks were found
+            if (result.tracks.length === 0)
+                return interaction.editReply("No results")
+            
+            // Add the track to the queue
+            const song = result.tracks[0]
+            await queue.addTrack(song)
+            embed
+                .setDescription(`**[${song.title}](${song.url})** has been added to the Queue`)
+                .setThumbnail(song.thumbnail)
+                .setFooter({ text: `Duration: ${song.duration}`})
+		}
+
+        // Play the song
+        if (!queue.playing) await queue.play()
+        
+        // Respond with the embed containing information about the player
+        await interaction.reply({
+            embeds: [embed]
+        })
+	},
+}
+
+export default playcommand

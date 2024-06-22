@@ -1,9 +1,10 @@
-import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Partials, Collection, VideoQualityMode, Routes } from "discord.js";
 import dotenv from 'dotenv'
 import ready from "./events/ready.js";
 import interactionCreate from "./events/interactionCreate.js";
 dotenv.config()
 import { read, readdirSync } from "fs";
+import {REST} from 'discord.js'
     
     const INTENTS = Object.values(GatewayIntentBits);
     const PARTIALS = Object.values(Partials);
@@ -14,7 +15,6 @@ import { read, readdirSync } from "fs";
         allowedMentions: {
           parse: ["users", "roles", "everyone"],
       },
-        presence: {activities: [{name: "Holmstain", type:"wathing", url: `https://kick.com/kaanflix"`}]},
         partials: PARTIALS,
         retryLimit: 3
     });
@@ -34,7 +34,7 @@ import { read, readdirSync } from "fs";
         props(f).then((value) => {
           const props = value;
           client.commands.push({
-            name: props.name.toLowerCase(),
+            name: props.name?.toLowerCase(),
             description: props.description,
             options: props.options,
             dm_permission: props.dm_permission,
@@ -52,11 +52,6 @@ import { read, readdirSync } from "fs";
     client.on('interactionCreate', (interaction) => {
       interactionCreate(client,interaction);
       });
-
-    client.on('playcommand', playcommand => {
-      interactionCreate(client,playcommand);
-    });
-
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN
 
