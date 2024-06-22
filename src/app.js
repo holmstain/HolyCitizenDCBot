@@ -1,20 +1,20 @@
-master
 import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
-import {Console} from "console";
 import dotenv from 'dotenv'
-dotenv.config();
-import { TOKEN } from './.env'
-import { readdirSync } from "fs";
-
+import ready from "./events/ready.js";
+import interactionCreate from "./events/interactionCreate.js";
+dotenv.config()
+import { read, readdirSync } from "fs";
+    
     const INTENTS = Object.values(GatewayIntentBits);
     const PARTIALS = Object.values(Partials);
 
     const client = new Client ({
         intents: INTENTS,
+        disableEveryone: false,
         allowedMentions: {
-            parse: ["users"]
-        },
-        presence: {activities: [{name: "Holmstain", type: "WATCHING"}]},
+          parse: ["users", "roles", "everyone"],
+      },
+        presence: {activities: [{name: "Holmstain", type:"wathing", url: `https://kick.com/kaanflix"`}]},
         partials: PARTIALS,
         retryLimit: 3
     });
@@ -22,92 +22,46 @@ import { readdirSync } from "fs";
     global.client = client;
     client.commands = (global.commands = []);
 
+    
+    async function props(f) {
+      const module = await import(`./commands/${f}`);
+      return module.default; // tüm export'ları almak için
+    }
+
 
     readdirSync('./commands').forEach(f =>{
         if(!f.endsWith(".js")) return;
-
-        async function props(f) {
-            const module = await import(`./commands/${f}`);
-            return module; // tüm export'ları almak için
-          }
-
-        client.commands.push({
+        props(f).then((value) => {
+          const props = value;
+          client.commands.push({
             name: props.name.toLowerCase(),
             description: props.description,
             options: props.options,
             dm_permission: props.dm_permission,
             type: 1
         })
-
         console.log(`[COMMAND] ${props.name} yüklendi!`)
+        })
     });
 
-/* Eventleri Yüklüyoruz */
+    /* Eventleri Yüklüyoruz */
+    client.on('ready', client => {
+    ready(client);
+    });
+    
+    client.on('interactionCreate', (interaction) => {
+      interactionCreate(client,interaction);
+      });
 
-const repliedMessages = new Set();
-client.on('messageCreate', message => {
-    // Bot'un kendisine yanıt vermemesi için kontrol
-    if (message.author.bot)
-        return;
+    client.on('playcommand', playcommand => {
+      interactionCreate(client,playcommand);
+    });
 
-    // Eğer mesaj ID'si zaten Set içinde ise dönüş yap
-    if (repliedMessages.has(message.id))
-        return;
-    const greetings = ["sa", "merhaba", "selamlar", "selam"];
-    if (greetings.includes(message.content.toLowerCase())) {
-        message.reply("Merhaba, Hoşgeldin!");
-        repliedMessages.add(message.id);
-    }
-})
 
-client.on('messageCreate', message => {
-    // Bot'un kendisine yanıt vermemesi için kontrol
-    if (message.author.bot)
-        return;
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN
 
-    // Eğer mesaj ID'si zaten Set içinde ise dönüş yap
-    if (repliedMessages.has(message.id))
-        return;
-    const greetings = ["nasılsın"];
-    if (greetings.includes(message.content.toLowerCase())) {
-        message.reply("Ben botum kral (mk aveli)");
-        repliedMessages.add(message.id);
-    }
-})
-
-client.on('messageCreate', async message => {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const event = args.shift().toLowerCase();
-
-    if (event === 'clear') {
-        // Sadece mesajları silebilecek olan kullanıcıların izni olduğunu kontrol edelim
-        if (!message.member.permissions.has('MANAGE_MESSAGES')) {
-            return message.reply('Bu komutu kullanma izniniz yok.');
-        }
-
-        // Silinecek mesaj sayısını alalım
-        const amount = parseInt(args[0]);
-
-        // amount geçerli bir sayı mı kontrol edelim
-        if (isNaN(amount)) {
-            return message.reply('Lütfen geçerli bir sayı girin.');
-        } else if (amount <= 0 || amount > 100) {
-            return message.reply('Silinecek mesaj sayısı 1 ile 100 arasında olmalıdır.');
-        }
-
-        // Mesajları silme işlemi
-        try {
-            await message.channel.bulkDelete(amount);
-            message.reply(`${amount} adet mesaj başarıyla silindi.`);
-        } catch (err) {
-            console.error('Hata oluştu:', err);
-            message.reply('Mesajları silerken bir hata oluştu.');
-        }
-    }
-});
-
-const token = process.env.TOKEN;
-console.log(`TOKEN: ${token}`);
-client.login(TOKEN)
+client.login(DISCORD_TOKEN).then(app => {
+    console.log(`[BOT] Token girişi başarılı.`)
+  }).catch(app => {
+    console.log(`[BOT] Token girişi başarısız.`)
+  })

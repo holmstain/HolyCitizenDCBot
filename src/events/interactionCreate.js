@@ -1,19 +1,28 @@
-const { Collection, EmbedBuilder } = require("discord.js");
-const { readdirSync } = require("fs");
+import { Collection, EmbedBuilder } from "discord.js";
+import { readdirSync } from "fs";
 
-module.exports = async(client, interaction) => {
+   
+async function props(f) {
+  const module = await import(`../commands/${f}`);
+  return module.default; // tüm export'ları almak için
+}
+
+const interactionCreate = async(client, interaction) => {
 
   if(interaction.isChatInputCommand()) {
-
     if (!interaction.guildId) return;
-
     readdirSync('./commands').forEach(f => {
-
-      const cmd = require(`../commands/${f}`);
-
-      if(interaction.commandName.toLowerCase() === cmd.name.toLowerCase()) {
-
-        return cmd.run(client, interaction);
-      }
+      props(f).then((value) => {
+        const cmd = value;
+        if(interaction.commandName.toLowerCase() === cmd.name.toLowerCase()) {
+          cmd.run(client, interaction).then((value2) => {
+           console.log(value2)
+          })
+          
+        }
+      })
     });
   }};
+
+  
+export default interactionCreate;
