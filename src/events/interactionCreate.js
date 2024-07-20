@@ -22,7 +22,8 @@ const interactionCreate = async(client, interaction) => {
         }
       })
     });
-  }};
+  }
+};
 
   
 export default interactionCreate;

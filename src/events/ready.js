@@ -11,9 +11,10 @@ const ready = async (client) => {
     const response = rest.put(
       Routes.applicationGuildCommands(
           client.user.id,
-          '1167933101968740472'
+          process.env.CLIENT_ID
       ),
-      { body: client.commands }
+      { body: client.commands
+       }
   );
   } catch (error) {
     console.error(error);

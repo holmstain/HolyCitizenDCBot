@@ -15,8 +15,10 @@ const clearCommand = {
             const results = await interaction.channel.messages.fetch();
             await interaction.channel.bulkDelete(results);
             interaction.reply({ embeds: [new EmbedBuilder().setDescription(`Söylenmiş sözler temizlendi`)], ephemeral: true });
+            console.log("IT WORKS")
         } catch (error) {
             interaction.reply({ embeds: [new EmbedBuilder().setDescription("Konuşulanlar temizlenemedi :) - DEVA")], ephemeral: true });
+            console.log("BROKEN")
         }
     }
 };

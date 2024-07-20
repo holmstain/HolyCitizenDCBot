@@ -1,6 +1,6 @@
 import { Client, EmbedBuilder } from 'discord.js';
 
-const clearCommand = {
+const pingcommand = {
   name: "ping",
   description: "Bot'un ping değerlerini öğrenirsiniz",
   type: 1,
@@ -11,4 +11,4 @@ const clearCommand = {
 }
 };
 
-export default clearCommand;
+export default pingcommand;
