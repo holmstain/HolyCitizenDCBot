@@ -2,7 +2,7 @@ import { Client, EmbedBuilder } from 'discord.js';
 
 const helpcommand = {
     name: "help",
-    description: "Hizmet için buradayım!",
+    description: "Verdiğim hizmetleri öğrenirsiniz",
     type: 1,
     options: [],
     
@@ -20,7 +20,7 @@ const helpcommand = {
       }));
     
     const embed = new EmbedBuilder()
-      .setAuthor({ name: "HolyCitizen" })
+      .setAuthor({ name: "HolyCitizen Bot" })
       .setColor(0x0099FF)
       .setDescription('Hizmet verdiğim komutlar şunlar:')
       .setTitle('Yardıma Geldim!')

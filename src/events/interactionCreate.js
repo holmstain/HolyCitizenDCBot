@@ -1,4 +1,3 @@
-import { Collection, EmbedBuilder } from "discord.js";
 import { readdirSync } from "fs";
 
    
@@ -11,7 +10,7 @@ const interactionCreate = async(client, interaction) => {
 
   if(interaction.isChatInputCommand()) {
     if (!interaction.guildId) return;
-    readdirSync('./commands').forEach(f => {
+    readdirSync('./commands/').forEach(f => {
       props(f).then((value) => {
         const cmd = value;
         if(interaction.commandName.toLowerCase() === cmd.name.toLowerCase()) {

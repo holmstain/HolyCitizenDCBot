@@ -1,22 +1,24 @@
-import { Client, GatewayIntentBits, Partials, Collection, VideoQualityMode, Routes } from "discord.js";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import dotenv from 'dotenv'
 import ready from "./events/ready.js";
 import interactionCreate from "./events/interactionCreate.js";
 dotenv.config()
 import { read, readdirSync } from "fs";
-import {REST} from 'discord.js'
-    
+
+
     const INTENTS = Object.values(GatewayIntentBits);
     const PARTIALS = Object.values(Partials);
 
     const client = new Client ({
-        intents: INTENTS,
+        intents: [INTENTS],
+        presence: {status: "active", activities: [{name:"Working hard or hardworking", type: "LISTENING"}]},
         disableEveryone: false,
         allowedMentions: {
           parse: ["users", "roles", "everyone"],
       },
         partials: PARTIALS,
-        retryLimit: 3
+        retryLimit: 3,
+        disableMentions: 'everyone',
     });
 
     global.client = client;
@@ -29,18 +31,18 @@ import {REST} from 'discord.js'
     }
 
 
-    readdirSync('./commands').forEach(f =>{
+    readdirSync('./commands/').forEach(f =>{
         if(!f.endsWith(".js")) return;
         props(f).then((value) => {
           const props = value;
           client.commands.push({
-            name: props.name?.toLowerCase(),
-            description: props.description,
-            options: props.options,
-            dm_permission: props.dm_permission,
+            name: props?.name?.toLowerCase(),
+            description: props?.description,
+            options: props?.options,
+            dm_permission: props?.dm_permission,
             type: 1
         })
-        console.log(`[COMMAND] ${props.name} yüklendi!`)
+        console.log(`[COMMAND] ${props?.name} yüklendi!`)
         })
     });
 
@@ -52,6 +54,7 @@ import {REST} from 'discord.js'
     client.on('interactionCreate', (interaction) => {
       interactionCreate(client,interaction);
       });
+
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN
 
