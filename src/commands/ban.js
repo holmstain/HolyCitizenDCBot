@@ -1,62 +1,56 @@
-import {Client, EmbedBuilder, InteractionType, ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
-const interaction = InteractionType;
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { translate } from "../services/i18n.js";
 
 const banCommand = {
-        name: "Ban",
-        description: "Üyenin binaya girişini yasakla!",
-        type: 1,
-        options: [{
-          name: 'yasaklanacak-meclis-uyesi',
-          description: 'The user to ban',
-          type: ApplicationCommandOptionType.Mentionable,
-          required: true,
-        }, {
-          name: 'yasaklama-sebebi',
-          description: 'The reason for the ban',
-          type: ApplicationCommandOptionType.String,
-          required: true,
-        }],
-        defaultMemberPermissions: [PermissionFlagsBits.BanMembers],
+  data: new SlashCommandBuilder()
+    .setName("ban")
+    .setDescription("Üyenin sunucuya girişini yasaklar")
+    .setDescriptionLocalizations({ "en-US": "Bans a member from the server" })
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Yasaklanacak üye").setRequired(true),
+    )
+    .addStringOption((option) =>
+      option.setName("reason").setDescription("Yasaklama sebebi").setRequired(true),
+    ),
 
-    run: async(client, interaction) => {
-        const targetUserId = interaction.options.get('yasaklanacak-meclis-uyesi').value;
-        const reason = interaction.options.get('yasaklama-sebebi')?.value || "Sebep belirtilmedi!"
+  execute: async (_client, interaction) => {
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.BanMembers)) {
+      await interaction.reply({ content: translate(interaction.locale, "banPermission"), ephemeral: true });
+      return;
+    }
 
-        await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
+    const targetMember = interaction.options.getMember("user");
+    const reason = interaction.options.getString("reason");
 
-        const targetUser = await interaction.guild.members.fetch(targetUserId);
-        if (!targetUser) {
-            await interaction.editReply('Kişi binada değil!')
-            return;
-        }
+    if (!targetMember) {
+      await interaction.editReply(translate(interaction.locale, "banNotFound"));
+      return;
+    }
 
-        if(targetUser.id === interaction.guild.ownerId) {
-            await interaction.editReply('Başkan KOVULAMAZ!')
-            return;
-        }
+    if (targetMember.id === interaction.guild.ownerId) {
+      await interaction.editReply(translate(interaction.locale, "banOwner"));
+      return;
+    }
 
-        const targetUserRolePosition = targetUser.roles.highest.position;
-        const requestUserRolePosition = interaction.member.roles.highest.position;
-        const botRolePosition = interaction.guild.members.me.roles.highest.position;
+    const requestMember = await interaction.guild.members.fetch(interaction.user.id);
+    const botMember = await interaction.guild.members.fetchMe();
 
-        if(targetUserRolePosition >= requestUserRolePosition) {
-            await interaction.editReply("Bu kullanıcı binadan uzaklaştırılamadı!")
-            return;
-        }
+    if (targetMember.roles.highest.position >= requestMember.roles.highest.position) {
+      await interaction.editReply(translate(interaction.locale, "banHierarchy"));
+      return;
+    }
 
-        if(targetUserRolePosition >= botRolePosition) {
-            await interaction.editReply("Kişi binadan uzaklaştırılamadı(aynı roldeyiz!)!")
-            return;
-        }
+    if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
+      await interaction.editReply(translate(interaction.locale, "botHierarchy"));
+      return;
+    }
 
-        // Ban The targetUser
-        try {
-            await targetUser.ban({reason:reason});
-            await interaction.editReply(`${targetUser} binadan uzaklaştırıldı \n Yasaklama-Sebebi: ${reason}`);
-        } catch(error) {
-            console.log(`${error} hatası alındı!`)
-        }
-    },
-}
+    // Ban The targetUser
+    await targetMember.ban({ reason });
+    await interaction.editReply(translate(interaction.locale, "banDone", { user: targetMember.user.tag, reason }));
+  },
+};
 
 export default banCommand;

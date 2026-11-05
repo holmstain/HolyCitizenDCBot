@@ -1,14 +1,18 @@
-import { Client, EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { translate } from "../services/i18n.js";
 
 const pingcommand = {
-  name: "ping",
-  description: "Bot'un ping değerlerini öğrenirsiniz",
-  type: 1,
-  options: [],
+  data: new SlashCommandBuilder()
+    .setName("ping")
+    .setDescription("Botun bağlantı gecikmesini gösterir")
+    .setDescriptionLocalizations({ "en-US": "Shows the bot connection latency" }),
 
-  run: async(client, interaction) => {
-    interaction.reply({ embeds: [ new EmbedBuilder().setDescription(`Server Ping: ***${client.ws.ping}ms***`) ], ephemeral: true })
-}
+  execute: async (client, interaction) => {
+    await interaction.reply({
+      embeds: [new EmbedBuilder().setDescription(translate(interaction.locale, "pingOutput", { ping: client.ws.ping }))],
+      ephemeral: true,
+    });
+  },
 };
 
 export default pingcommand;

@@ -1,30 +1,20 @@
-import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v10';
-import dotenv from 'dotenv'
-dotenv.config()
-import express from 'express';
-const app = express()
-const port = 3000
+import { REST, Routes } from "discord.js";
 
-
-const ready = async (client) => {
-
-  
-  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
-  try {
-    const response = rest.put(
-      Routes.applicationGuildCommands(
-        process.env.CLIENT_ID, // Bot uygulama ID'si
-        process.env.GUILD_ID // Komutların yükleneceği guild ID'si
-      ),
-      { body: client.commands
-      }
-    );
-  } catch (error) {
-    console.error(error);
-  }
-  console.log(`${client.user.tag} Hizmette!`);
+export const registerCommands = async (rest, applicationId, commands) => {
+  await rest.put(
+    Routes.applicationCommands(applicationId),
+    { body: commands },
+  );
 };
 
+const ready = async (client) => {
+  const applicationId = process.env.CLIENT_ID; // Bot uygulama ID'si
+  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+  const commands = client.commands.map((command) => command.data.toJSON());
+
+  await registerCommands(rest, applicationId, commands);
+
+  console.log(`${client.user.tag} Hizmette!`);
+};
 
 export default ready;

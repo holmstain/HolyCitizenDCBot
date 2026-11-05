@@ -1,36 +1,43 @@
-import { Client, EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { translate } from "../services/i18n.js";
+
+const descriptionKeys = {
+  ban: "commandBan",
+  basvuru: "commandBasvuru",
+  clear: "commandClear",
+  destek: "commandDestek",
+  help: "commandHelp",
+  kapat: "commandKapat",
+  kick: "commandKick",
+  level: "commandLevel",
+  ping: "commandPing",
+};
 
 const helpcommand = {
-    name: "help",
-    description: "Verdiğim hizmetleri öğrenirsiniz",
-    type: 1,
-    options: [],
-    
-    run: async(client, interaction) => {
-        const categories = [];
-        
-        client.commands.forEach((command) => 
-            categories.includes(command.category) ? false : categories.push(command.category)
-    );
-    
-    const fields = client.commands.map(command => ({
-        name: `/${command.name}`,
-        value: command.description || 'No description available',
-        inline: false
-      }));
-    
+  data: new SlashCommandBuilder()
+    .setName("help")
+    .setDescription("Kullanılabilir komutları listeler")
+    .setDescriptionLocalizations({ "en-US": "Lists the available commands" }),
+
+  execute: async (client, interaction) => {
+    const fields = client.commands.map(({ data }) => ({
+      name: `/${data.name}`,
+      value: translate(interaction.locale, descriptionKeys[data.name]),
+      inline: false,
+    }));
+
     const embed = new EmbedBuilder()
       .setAuthor({ name: "HolyCitizen Bot" })
-      .setColor(0x0099FF)
-      .setDescription('Hizmet verdiğim komutlar şunlar:')
-      .setTitle('Yardıma Geldim!')
-      .setThumbnail(client.user.avatarURL())
+      .setColor(0x0099ff)
+      .setDescription(translate(interaction.locale, "helpAvailable"))
+      .setTitle(translate(interaction.locale, "helpTitle"))
+      .setThumbnail(client.user.displayAvatarURL())
       .addFields(fields)
       .setTimestamp()
-      .setFooter({ text: 'Holmstain Tarafından Oluşturuldu 💚💚💚' });
+      .setFooter({ text: "Holmstain Tarafından Oluşturuldu 💚💚💚" });
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
-  }
+  },
 };
 
 export default helpcommand;

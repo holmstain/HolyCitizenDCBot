@@ -1,62 +1,56 @@
-import {Client, EmbedBuilder, InteractionType, ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
-const interaction = InteractionType;
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { translate } from "../services/i18n.js";
 
 const kickCommand = {
-        name: "kick",
-        description: "Üyeyi binadan uzaklastır",
-        type: 1,
-        options: [{
-          name: 'binadan-uzaklastırılacak-kisi',
-          description: 'Binadan uzaklaştırılacak kişi',
-          type: ApplicationCommandOptionType.Mentionable,
-          required: true,
-        }, {
-          name: 'uzaklastırma-sebebi',
-          description: 'uzaklastırma sebebi',
-          type: ApplicationCommandOptionType.String,
-          required: true,
-        }],
-        defaultMemberPermissions: [PermissionFlagsBits.KickMembers],
+  data: new SlashCommandBuilder()
+    .setName("kick")
+    .setDescription("Üyeyi sunucudan uzaklaştırır")
+    .setDescriptionLocalizations({ "en-US": "Kicks a member from the server" })
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Uzaklaştırılacak üye").setRequired(true),
+    )
+    .addStringOption((option) =>
+      option.setName("reason").setDescription("Uzaklaştırma sebebi").setRequired(true),
+    ),
 
-    run: async(client, interaction) => {
-        const targetUserId = interaction.options.get('binadan-uzaklastırılacak-kisi').value;
-        const reason = interaction.options.get('uzaklastırma-sebebi')?.value || "Sebep belirtilmedi!"
+  execute: async (_client, interaction) => {
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.KickMembers)) {
+      await interaction.reply({ content: translate(interaction.locale, "kickPermission"), ephemeral: true });
+      return;
+    }
 
-        await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
+    const targetMember = interaction.options.getMember("user");
+    const reason = interaction.options.getString("reason");
 
-        const targetUser = await interaction.guild.members.fetch(targetUserId);
-        if (!targetUser) {
-            await interaction.editReply('Kişi binada değil!')
-            return;
-        }
+    if (!targetMember) {
+      await interaction.editReply(translate(interaction.locale, "banNotFound"));
+      return;
+    }
 
-        if(targetUser.id === interaction.guild.ownerId) {
-            await interaction.editReply('Başkan binadan atılamaz!')
-            return;
-        }
+    if (targetMember.id === interaction.guild.ownerId) {
+      await interaction.editReply(translate(interaction.locale, "kickOwner"));
+      return;
+    }
 
-        const targetUserRolePosition = targetUser.roles.highest.position;
-        const requestUserRolePosition = interaction.member.roles.highest.position;
-        const botRolePosition = interaction.guild.members.me.roles.highest.position;
+    const requestMember = await interaction.guild.members.fetch(interaction.user.id);
+    const botMember = await interaction.guild.members.fetchMe();
 
-        if(targetUserRolePosition >= requestUserRolePosition) {
-            await interaction.editReply("Bu kullanıcı binadan atılamadı!!")
-            return;
-        }
+    if (targetMember.roles.highest.position >= requestMember.roles.highest.position) {
+      await interaction.editReply(translate(interaction.locale, "banHierarchy"));
+      return;
+    }
 
-        if(targetUserRolePosition >= botRolePosition) {
-            await interaction.editReply("Kişi binadan atılamadı(aynı roldeyiz!)!")
-            return;
-        }
+    if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
+      await interaction.editReply(translate(interaction.locale, "botHierarchy"));
+      return;
+    }
 
-        // Ban The targetUser
-        try {
-            await targetUser.kick({reason:reason});
-            await interaction.editReply(`${targetUser} binadan uzaklaştırıldı \n Binadan atılma sebebi: ${reason}`);
-        } catch(error) {
-            console.log(`${error} hatası alındı!`)
-        }
-    },
-}
+    // Ban The targetUser
+    await targetMember.kick(reason);
+    await interaction.editReply(translate(interaction.locale, "kickDone", { user: targetMember.user.tag, reason }));
+  },
+};
 
 export default kickCommand;
