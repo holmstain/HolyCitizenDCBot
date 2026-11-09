@@ -110,7 +110,7 @@ export const handleApplicationDecision = async (interaction) => {
 
     const role = await interaction.guild.roles.fetch(roleId);
     const botMember = await interaction.guild.members.fetchMe();
-    if (!role || role.position >= botMember.roles.highest.position) {
+    if (!role || role.position >= (botMember.roles.highest?.position ?? 0)) {
       await interaction.reply({ content: translate(interaction.locale, "applicationRoleInvalid"), ephemeral: true });
       return;
     }

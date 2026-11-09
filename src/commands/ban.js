@@ -37,12 +37,14 @@ const banCommand = {
     const requestMember = await interaction.guild.members.fetch(interaction.user.id);
     const botMember = await interaction.guild.members.fetchMe();
 
-    if (targetMember.roles.highest.position >= requestMember.roles.highest.position) {
+    const highestPosition = (member) => member.roles.highest?.position ?? 0;
+
+    if (highestPosition(targetMember) >= highestPosition(requestMember)) {
       await interaction.editReply(translate(interaction.locale, "banHierarchy"));
       return;
     }
 
-    if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
+    if (highestPosition(targetMember) >= highestPosition(botMember)) {
       await interaction.editReply(translate(interaction.locale, "botHierarchy"));
       return;
     }

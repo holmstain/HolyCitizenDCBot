@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile, copyFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 export const levelForXp = (xp) => Math.floor((Math.sqrt(1 + (8 * xp) / 100) - 1) / 2);
@@ -17,7 +17,12 @@ export const createLevelingStore = ({ filePath, cooldownMs = 60_000, now = Date.
           if (error.code === "ENOENT") {
             return {};
           }
-          throw error;
+          // Bozuk JSON: dosyayı yedekleyip boş bir storage ile devam et, botu patlatma.
+          const backupPath = `${filePath}.corrupt-${Date.now()}.bak`;
+          return copyFile(filePath, backupPath).then(() => {
+            console.error(`[LEVELING] Bozuk levels.json yedeklendi: ${backupPath}`);
+            return {};
+          });
         })
         .then((loadedRecords) => {
           records = loadedRecords;

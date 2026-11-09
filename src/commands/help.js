@@ -27,14 +27,14 @@ const helpcommand = {
     }));
 
     const embed = new EmbedBuilder()
-      .setAuthor({ name: "HolyCitizen Bot" })
+      .setAuthor({ name: "Great Judge Holy Citizen Command List" })
       .setColor(0x0099ff)
       .setDescription(translate(interaction.locale, "helpAvailable"))
       .setTitle(translate(interaction.locale, "helpTitle"))
       .setThumbnail(client.user.displayAvatarURL())
       .addFields(fields)
       .setTimestamp()
-      .setFooter({ text: "Holmstain Tarafından Oluşturuldu 💚💚💚" });
+      .setFooter({ text: "Holmstain tarafından oluşturuldu 💚💚💚" });
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   },

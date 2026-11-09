@@ -1,4 +1,9 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import {
+  SnowflakeUtil,
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+} from "discord.js";
 import { translate } from "../services/i18n.js";
 
 const clearCommand = {
@@ -15,8 +20,24 @@ const clearCommand = {
     }
 
     await interaction.deferReply({ ephemeral: true });
-    const messages = await interaction.channel.messages.fetch();
-    await interaction.channel.bulkDelete(messages);
+    const MAX_BULK_DELETE = 100;
+    const MESSAGE_AGE_LIMIT_MS = 14 * 24 * 60 * 60 * 1000;
+
+    const messages = await interaction.channel.messages.fetch({ limit: MAX_BULK_DELETE });
+    const deletable = Array.from(messages.values())
+      .filter(
+        (message) => Date.now() - SnowflakeUtil.timestampFrom(message.id) < MESSAGE_AGE_LIMIT_MS,
+      )
+      .slice(0, MAX_BULK_DELETE);
+
+    if (deletable.length === 0) {
+      await interaction.editReply({
+        embeds: [new EmbedBuilder().setDescription(translate(interaction.locale, "clearNothing"))],
+      });
+      return;
+    }
+
+    await interaction.channel.bulkDelete(deletable);
     await interaction.editReply({
       embeds: [new EmbedBuilder().setDescription(translate(interaction.locale, "clearDone"))],
     });

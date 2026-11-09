@@ -1,9 +1,14 @@
 export const getGuildSettings = (guildId) => {
   let settingsByGuild = {};
   if (process.env.GUILD_SETTINGS) {
-    settingsByGuild = JSON.parse(process.env.GUILD_SETTINGS);
+    try {
+      settingsByGuild = JSON.parse(process.env.GUILD_SETTINGS);
+    } catch (error) {
+      console.error("[GUILD_SETTINGS] GUILD_SETTINGS JSON çözümlenemedi, ortam değişkeni fallback kullanılıyor.");
+      settingsByGuild = {};
+    }
     if (!settingsByGuild || typeof settingsByGuild !== "object" || Array.isArray(settingsByGuild)) {
-      throw new TypeError("GUILD_SETTINGS bir sunucu ayarları JSON nesnesi olmalı.");
+      settingsByGuild = {};
     }
   }
 
